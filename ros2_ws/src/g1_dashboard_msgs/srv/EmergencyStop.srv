@@ -1,0 +1,4 @@
+bool activate    # true = engage E-stop, false = release
+---
+bool success
+string message

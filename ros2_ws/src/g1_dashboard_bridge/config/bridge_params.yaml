@@ -1,0 +1,10 @@
+g1_dashboard_bridge:
+  ros__parameters:
+    robot_variant: "29dof"            # "23dof" or "29dof"
+    joint_state_publish_rate: 50.0    # Hz
+    imu_publish_rate: 50.0            # Hz
+    battery_publish_rate: 1.0         # Hz
+    command_max_rate: 50.0            # Hz (throttle incoming commands)
+    heartbeat_timeout: 0.5            # seconds before safety stop
+    enforce_joint_limits: true
+    enable_command_forwarding: true    # false = read-only mode

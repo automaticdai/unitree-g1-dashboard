@@ -1,0 +1,4 @@
+uint8 mode       # Target mode (see RobotState.msg mode values)
+---
+bool success
+string message

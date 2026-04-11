@@ -1,0 +1,11 @@
+g1_dashboard:
+  ros__parameters:
+    robot_variant: "29dof"
+    urdf_path: ""                      # auto-resolved from resource/ if empty
+    default_unit_degrees: true
+    default_live_mode: false           # staged mode by default (safer)
+    heartbeat_rate: 10.0               # Hz
+    point_cloud_max_points: 100000
+    point_cloud_color_mode: "height"   # height, intensity, distance, flat
+    camera_topic: "/camera/image_raw"
+    lidar_topic: "/lidar/points"
