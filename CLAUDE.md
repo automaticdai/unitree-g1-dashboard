@@ -62,7 +62,7 @@ Spin Thread:       rclpy.spin(node) — daemon thread
 
 ## Current Status
 
-Phases 1-4 complete. Phases 5-6 pending.
+All phases (1-6) complete.
 
 Phase 2 adds:
 - `g1_dashboard_bridge` C++ node with `SafetyMonitor` (heartbeat watchdog, limit clipping, NaN/Inf rejection, rate limit). Real unitree_hg integration gated by CMake `-DUSE_UNITREE_HG=ON` — in standalone mode the bridge validates and logs commands only.
@@ -87,4 +87,17 @@ Phase 4 adds:
 - `utils/commanded_state.py` — `CommandedState` QObject shared on the node, mirroring `SelectionState`. Emits `commands_changed(positions, dirty)` when the commanded pose changes.
 - `RobotRenderer.draw_ghost()` + `DigitalTwinGLWidget.set_commanded_pose()` render a semi-transparent orange skeleton overlay whenever any joint is dirty.
 
-Test coverage: 48 Python tests passing, 24 skipped (PySide6-gated; includes new `test_joint_row`, `test_commanded_state`, `test_gain_presets`). 16 C++ tests in bridge.
+Phase 5 adds:
+- `panels/camera_panel.py` — `msg_to_qimage()` converts `sensor_msgs/Image` (rgb8/bgr8/mono8) and `CompressedImage` to `QPixmap`. Uses cv_bridge if available, falls back to manual decoding. Snapshot saves PNG via `QFileDialog`. FPS counter (1-second sliding window).
+- `utils/color_maps.py` — vectorized Viridis/Jet/Turbo (no matplotlib dependency) + `normalize()` with optional explicit bounds.
+- `utils/point_cloud_utils.py` — `decode_pointcloud2()` via `sensor_msgs_py` (with manual struct fallback), `decimate()`, `filter_distance()`.
+- `rendering/point_cloud_renderer.py` — `PointCloudGLWidget` with legacy GL vertex/color arrays for `GL_POINTS`. Reuses `CameraController` so navigation matches the digital twin.
+- `panels/lidar_panel.py` — viewport + color mode dropdown (Height/Intensity/Distance/Flat), colormap dropdown, point size slider, point budget, distance min/max, accumulate-N-frames mode, reset view.
+
+Phase 6 adds:
+- `main_window.py` — keyboard shortcuts: Space (E-stop), Ctrl+Enter (Send), Ctrl+R (Reset), Ctrl+H (Home), Ctrl+L (toggle live mode), Ctrl+0 (reset 3D view), F2-F6 (toggle each panel). `Help → Shortcuts` lists them in-app.
+- Layout persistence via `QSettings`: geometry + dock state saved on close, restored on next open. `Layout` menu adds Save Current / Load (named) / Manage / Reset to Default.
+- `Dockerfile` based on `osrf/ros:humble-desktop` with PySide6, cv_bridge, sensor_msgs_py, OpenCV preinstalled. README documents X11 forwarding command.
+- `docs/USAGE.md` covers panels, shortcuts, layout flow, joint control workflow, gain presets.
+
+Test coverage: 63 Python tests passing, 24 skipped (PySide6/rclpy-gated). 16 C++ tests in bridge.

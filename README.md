@@ -104,9 +104,33 @@ cd ros2_ws/src/g1_dashboard && python3 -m pytest test/ -v
 | 1. Foundation | Done | Package scaffold, rclpy+PySide6 integration, dock layout, dark theme, status bar |
 | 2. Bridge + Status | Done | C++ bridge node with safety monitor, Python simulator, status panel with pyqtgraph plots, battery gauge, motor temp heatmap |
 | 3. Digital Twin | Done | Stick-figure G1 skeleton, QOpenGLWidget rendering, orbit/pan/zoom camera, ray-based joint picking, bidirectional selection between 3D viewport and joint control panel |
-| 4. Joint Control | Pending | Sliders, command publishing, ghost overlay, E-stop |
-| 5. Camera + LiDAR | Pending | cv_bridge image display, OpenGL point cloud |
-| 6. Polish + Deploy | Pending | Integration testing, Docker, documentation |
+| 4. Joint Control | Done | Sliders + spinboxes per joint, dirty tracking, live/staged publishing, gain editor with presets, E-stop service call, ghost-pose overlay |
+| 5. Camera + LiDAR | Done | cv_bridge image display with snapshot + FPS counter, OpenGL point cloud with color modes (Height/Intensity/Distance/Flat), distance filter, accumulate mode |
+| 6. Polish + Deploy | Done | Keyboard shortcuts, layout save/restore via QSettings, Docker image with X11 forwarding, shortcut docs |
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Space` | Emergency stop |
+| `Ctrl+Enter` | Send queued joint commands |
+| `Ctrl+R` | Reset commands to current pose |
+| `Ctrl+H` | Home pose (zero all joints) |
+| `Ctrl+L` | Toggle live-send mode |
+| `Ctrl+0` | Reset 3D camera view |
+| `F2`–`F6` | Toggle Digital Twin / Joint Control / Status / Camera / LiDAR panels |
+
+## Docker
+
+```bash
+docker build -t g1-dashboard .
+xhost +local:docker
+docker run --rm -it \
+  --network host \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  g1-dashboard
+```
 
 ## Documentation
 
