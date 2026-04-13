@@ -13,6 +13,7 @@ from std_msgs.msg import Header
 from PySide6.QtCore import QObject, Signal
 
 from g1_dashboard.config.ros_config import Topics, SENSOR_QOS, RELIABLE_QOS
+from g1_dashboard.utils.selection import SelectionState
 
 
 class DashboardSignals(QObject):
@@ -39,6 +40,7 @@ class DashboardNode(Node):
     def __init__(self):
         super().__init__('g1_dashboard')
         self.signals = DashboardSignals()
+        self.selection = SelectionState()
         self._topic_last_received: dict[str, float] = {}
 
         # --- Subscriptions ---

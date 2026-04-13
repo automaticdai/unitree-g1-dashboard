@@ -62,10 +62,21 @@ Spin Thread:       rclpy.spin(node) — daemon thread
 
 ## Current Status
 
-Phase 1 (Foundation) and Phase 2 (Bridge + Status) complete. Phases 3-6 pending.
+Phases 1-3 complete. Phases 4-6 pending.
 
 Phase 2 adds:
 - `g1_dashboard_bridge` C++ node with `SafetyMonitor` (heartbeat watchdog, limit clipping, NaN/Inf rejection, rate limit). Real unitree_hg integration gated by CMake `-DUSE_UNITREE_HG=ON` — in standalone mode the bridge validates and logs commands only.
 - `g1_dashboard` simulator entry point (`ros2 run g1_dashboard simulator`) publishes realistic fake telemetry for hardware-free testing.
 - Status panel rewritten with `BatteryGauge` (custom QPainter widget), `MotorTempHeatmap` (29 cells grouped by body part with temperature-based color), `RollingPlot` (pyqtgraph 10-second sliding window for angular velocity and linear acceleration).
 - C++ gtests for safety_monitor (9 cases) and joint_limits (7 cases).
+
+Phase 3 adds:
+- Stick-figure G1 skeleton in `utils/kinematics.py` — 36 links with approximate G1 dimensions, forward kinematics from 29-vector joint angles. No URDF mesh files needed.
+- `utils/transforms.py` — 4x4 matrix helpers (rotation, translation, look_at, perspective, ray-point distance). Fully tested (16 cases).
+- `rendering/camera_controller.py` — orbit/pan/zoom camera with spherical coordinates. Screen-to-world ray casting for picking.
+- `rendering/robot_renderer.py` — legacy-OpenGL stick-figure renderer (spheres at joints, cylinders for links), ray-based joint picking.
+- `rendering/gl_widget.py` — `QOpenGLWidget` with ~30 FPS throttled redraw, mouse input handlers.
+- `utils/selection.py` — `SelectionState` QObject shared across panels. 3D click ↔ joint row click are both wired to it and stay in sync.
+- `widgets/joint_row.py` — clickable joint row with live value display, rad/deg toggle.
+
+Test coverage: 48 Python tests passing, 13 skipped (PySide6-gated). 16 C++ tests in bridge.

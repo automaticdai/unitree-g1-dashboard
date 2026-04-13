@@ -103,7 +103,7 @@ cd ros2_ws/src/g1_dashboard && python3 -m pytest test/ -v
 |-------|--------|-------------|
 | 1. Foundation | Done | Package scaffold, rclpy+PySide6 integration, dock layout, dark theme, status bar |
 | 2. Bridge + Status | Done | C++ bridge node with safety monitor, Python simulator, status panel with pyqtgraph plots, battery gauge, motor temp heatmap |
-| 3. Digital Twin | Pending | URDF loading, OpenGL rendering, joint animation, picking |
+| 3. Digital Twin | Done | Stick-figure G1 skeleton, QOpenGLWidget rendering, orbit/pan/zoom camera, ray-based joint picking, bidirectional selection between 3D viewport and joint control panel |
 | 4. Joint Control | Pending | Sliders, command publishing, ghost overlay, E-stop |
 | 5. Camera + LiDAR | Pending | cv_bridge image display, OpenGL point cloud |
 | 6. Polish + Deploy | Pending | Integration testing, Docker, documentation |
