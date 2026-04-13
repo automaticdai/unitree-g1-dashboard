@@ -28,6 +28,7 @@ setup(
     entry_points={
         'console_scripts': [
             'dashboard = g1_dashboard.main:main',
+            'simulator = g1_dashboard.simulator:main',
         ],
     },
 )

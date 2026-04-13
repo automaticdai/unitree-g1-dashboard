@@ -1,53 +1,56 @@
 """Launch file for the full G1 dashboard stack.
 
-Starts: robot_state_publisher + g1_dashboard_bridge + g1_dashboard GUI.
+Starts g1_dashboard_bridge + g1_dashboard GUI. Optionally starts the
+simulator for hardware-free testing when `use_simulator:=true`.
 """
 
 import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    robot_model = LaunchConfiguration('robot_model')
+    use_simulator = LaunchConfiguration('use_simulator')
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'robot_model',
             default_value='g1_29dof_rev_1_0',
-            description='Robot URDF model variant (e.g., g1_29dof_rev_1_0, g1_23dof_rev_1_0)',
+            description='Robot URDF model variant',
+        ),
+        DeclareLaunchArgument(
+            'use_simulator',
+            default_value='false',
+            description='Launch the Python simulator for hardware-free testing',
         ),
 
-        # Robot state publisher (URDF -> TF)
-        # Note: Requires URDF file to be available in g1_dashboard/resource/urdf/
-        # For now this is a placeholder — uncomment when URDF files are added:
-        # Node(
-        #     package='robot_state_publisher',
-        #     executable='robot_state_publisher',
-        #     parameters=[{
-        #         'robot_description': Command([
-        #             'cat ', FindPackageShare('g1_dashboard'),
-        #             '/resource/urdf/', robot_model, '.urdf'
-        #         ])
-        #     }],
-        # ),
+        # Bridge node (always runs — validates joint commands + publishes safety status)
+        Node(
+            package='g1_dashboard_bridge',
+            executable='g1_dashboard_bridge_node',
+            name='g1_dashboard_bridge',
+            parameters=[
+                os.path.join(
+                    get_package_share_directory('g1_dashboard_bridge'),
+                    'config', 'bridge_params.yaml'
+                )
+            ],
+            output='screen',
+        ),
 
-        # Bridge node (Phase 2 — uncomment when implemented)
-        # Node(
-        #     package='g1_dashboard_bridge',
-        #     executable='g1_dashboard_bridge_node',
-        #     parameters=[
-        #         os.path.join(
-        #             get_package_share_directory('g1_dashboard_bridge'),
-        #             'config', 'bridge_params.yaml'
-        #         )
-        #     ],
-        # ),
+        # Simulator — fake robot telemetry
+        Node(
+            package='g1_dashboard',
+            executable='simulator',
+            name='g1_simulator',
+            condition=IfCondition(use_simulator),
+            output='screen',
+        ),
 
         # Dashboard GUI
         Node(

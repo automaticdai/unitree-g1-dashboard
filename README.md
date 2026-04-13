@@ -82,13 +82,14 @@ ros2 launch g1_dashboard dashboard.launch.py robot_model:=g1_29dof_rev_1_0
 ### Testing Without a Robot
 
 ```bash
-# Publish fake joint states
-ros2 topic pub /joint_states sensor_msgs/msg/JointState \
-  "{header: {stamp: {sec: 0}}, name: ['left_hip_pitch_joint'], position: [0.5]}" --rate 50
+# Launch bridge + dashboard + built-in simulator
+ros2 launch g1_dashboard dashboard.launch.py use_simulator:=true
 
-# Or use joint_state_publisher_gui
-ros2 launch g1_dashboard dashboard_only.launch.py use_joint_state_publisher_gui:=true
+# Or run the simulator separately
+ros2 run g1_dashboard simulator
 ```
+
+The simulator publishes realistic joint states (sine-wave oscillation within limits), IMU data (slow orientation drift), battery (gradual discharge), robot state (mode + motor temperatures + foot forces), and safety status.
 
 ### Run Tests
 
@@ -101,7 +102,7 @@ cd ros2_ws/src/g1_dashboard && python3 -m pytest test/ -v
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1. Foundation | Done | Package scaffold, rclpy+PySide6 integration, dock layout, dark theme, status bar |
-| 2. Bridge + Status | Pending | C++ bridge node, live IMU/battery/state with pyqtgraph |
+| 2. Bridge + Status | Done | C++ bridge node with safety monitor, Python simulator, status panel with pyqtgraph plots, battery gauge, motor temp heatmap |
 | 3. Digital Twin | Pending | URDF loading, OpenGL rendering, joint animation, picking |
 | 4. Joint Control | Pending | Sliders, command publishing, ghost overlay, E-stop |
 | 5. Camera + LiDAR | Pending | cv_bridge image display, OpenGL point cloud |

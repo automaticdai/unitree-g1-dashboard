@@ -62,4 +62,10 @@ Spin Thread:       rclpy.spin(node) — daemon thread
 
 ## Current Status
 
-Phase 1 (Foundation) complete. Phases 2-6 pending.
+Phase 1 (Foundation) and Phase 2 (Bridge + Status) complete. Phases 3-6 pending.
+
+Phase 2 adds:
+- `g1_dashboard_bridge` C++ node with `SafetyMonitor` (heartbeat watchdog, limit clipping, NaN/Inf rejection, rate limit). Real unitree_hg integration gated by CMake `-DUSE_UNITREE_HG=ON` — in standalone mode the bridge validates and logs commands only.
+- `g1_dashboard` simulator entry point (`ros2 run g1_dashboard simulator`) publishes realistic fake telemetry for hardware-free testing.
+- Status panel rewritten with `BatteryGauge` (custom QPainter widget), `MotorTempHeatmap` (29 cells grouped by body part with temperature-based color), `RollingPlot` (pyqtgraph 10-second sliding window for angular velocity and linear acceleration).
+- C++ gtests for safety_monitor (9 cases) and joint_limits (7 cases).

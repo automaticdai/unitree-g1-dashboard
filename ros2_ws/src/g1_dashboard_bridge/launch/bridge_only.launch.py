@@ -5,7 +5,6 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -17,16 +16,16 @@ def generate_launch_description():
             description='Robot URDF model variant',
         ),
 
-        # Bridge node (Phase 2 — uncomment when implemented)
-        # Node(
-        #     package='g1_dashboard_bridge',
-        #     executable='g1_dashboard_bridge_node',
-        #     parameters=[
-        #         os.path.join(
-        #             get_package_share_directory('g1_dashboard_bridge'),
-        #             'config', 'bridge_params.yaml'
-        #         )
-        #     ],
-        #     output='screen',
-        # ),
+        Node(
+            package='g1_dashboard_bridge',
+            executable='g1_dashboard_bridge_node',
+            name='g1_dashboard_bridge',
+            parameters=[
+                os.path.join(
+                    get_package_share_directory('g1_dashboard_bridge'),
+                    'config', 'bridge_params.yaml'
+                )
+            ],
+            output='screen',
+        ),
     ])

@@ -78,9 +78,20 @@ class DashboardNode(Node):
             qos_profile=SENSOR_QOS,
         )
 
-        # Custom message subscriptions will be added once g1_dashboard_msgs
-        # is built. For now, we subscribe to the standard types above.
-        # TODO: Add RobotState and SafetyStatus subscriptions
+        # Custom message subscriptions — gracefully skip if package not built yet
+        self.robot_state_sub = None
+        self.safety_sub = None
+        try:
+            from g1_dashboard_msgs.msg import RobotState, SafetyStatus
+            self.robot_state_sub = self.create_subscription(
+                RobotState, Topics.ROBOT_STATE,
+                self._on_robot_state, qos_profile=RELIABLE_QOS)
+            self.safety_sub = self.create_subscription(
+                SafetyStatus, Topics.SAFETY_STATUS,
+                self._on_safety, qos_profile=RELIABLE_QOS)
+        except ImportError:
+            self.get_logger().warn(
+                'g1_dashboard_msgs not available — RobotState/SafetyStatus disabled')
 
         # --- Publishers ---
 
@@ -120,6 +131,14 @@ class DashboardNode(Node):
     def _on_pointcloud(self, msg: PointCloud2) -> None:
         self._topic_last_received[Topics.LIDAR_POINTS] = time.time()
         self.signals.pointcloud_received.emit(msg)
+
+    def _on_robot_state(self, msg) -> None:
+        self._topic_last_received[Topics.ROBOT_STATE] = time.time()
+        self.signals.robot_state_received.emit(msg)
+
+    def _on_safety(self, msg) -> None:
+        self._topic_last_received[Topics.SAFETY_STATUS] = time.time()
+        self.signals.safety_received.emit(msg)
 
     def _publish_heartbeat(self) -> None:
         msg = Header()
