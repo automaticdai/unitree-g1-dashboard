@@ -14,6 +14,7 @@ from PySide6.QtCore import QObject, Signal
 
 from g1_dashboard.config.ros_config import Topics, SENSOR_QOS, RELIABLE_QOS
 from g1_dashboard.utils.selection import SelectionState
+from g1_dashboard.utils.commanded_state import CommandedState
 
 
 class DashboardSignals(QObject):
@@ -41,6 +42,7 @@ class DashboardNode(Node):
         super().__init__('g1_dashboard')
         self.signals = DashboardSignals()
         self.selection = SelectionState()
+        self.commanded = CommandedState()
         self._topic_last_received: dict[str, float] = {}
 
         # --- Subscriptions ---
@@ -106,9 +108,10 @@ class DashboardNode(Node):
         # Heartbeat timer at 10 Hz
         self.heartbeat_timer = self.create_timer(0.1, self._publish_heartbeat)
 
-        # Joint command publisher will be added when panels need it
-        # (lazy initialization avoids importing custom msgs at startup)
+        # Joint command publisher + E-stop service client are lazy-inited
+        # on first use so startup doesn't hard-require g1_dashboard_msgs.
         self._joint_cmd_pub = None
+        self._estop_client = None
 
         self.get_logger().info('G1 Dashboard node initialized')
 
@@ -161,3 +164,52 @@ class DashboardNode(Node):
         """Return dict of topic -> seconds since last message."""
         now = time.time()
         return {t: now - ts for t, ts in self._topic_last_received.items()}
+
+    def publish_joint_commands(self, commands: list) -> int:
+        """Publish a list of JointCommand messages. Returns count published."""
+        if not commands:
+            return 0
+        if self._joint_cmd_pub is None:
+            try:
+                from g1_dashboard_msgs.msg import JointCommand  # noqa: F401
+            except ImportError:
+                self.get_logger().error(
+                    'Cannot publish joint commands: g1_dashboard_msgs not available')
+                return 0
+            self._joint_cmd_pub = self.create_publisher(
+                JointCommand, Topics.JOINT_COMMANDS, qos_profile=RELIABLE_QOS)
+        for cmd in commands:
+            self._joint_cmd_pub.publish(cmd)
+        return len(commands)
+
+    def trigger_estop(self, activate: bool = True, timeout: float = 1.0) -> bool | None:
+        """Call EmergencyStop service. Returns None if unreachable, else success bool.
+
+        Non-blocking from the caller's perspective: uses call_async; we spin
+        briefly here because this is invoked from the GUI thread and the
+        rclpy spin thread will dispatch the response. The timeout caps how
+        long we wait for the service to be discovered.
+        """
+        try:
+            from g1_dashboard_msgs.srv import EmergencyStop
+        except ImportError:
+            self.get_logger().error('EmergencyStop srv unavailable')
+            return None
+
+        if self._estop_client is None:
+            self._estop_client = self.create_client(EmergencyStop, '/emergency_stop')
+
+        if not self._estop_client.wait_for_service(timeout_sec=timeout):
+            self.get_logger().warn('EmergencyStop service not available')
+            return None
+
+        req = EmergencyStop.Request()
+        req.activate = activate
+        future = self._estop_client.call_async(req)
+        # Spin thread handles the callback; fire-and-forget from GUI perspective.
+        # Caller can log or poll `future.done()` if they need the result.
+        future.add_done_callback(
+            lambda f: self.get_logger().info(
+                f'E-stop response: success={f.result().success} msg={f.result().message}'
+                if f.result() is not None else 'E-stop call failed'))
+        return True

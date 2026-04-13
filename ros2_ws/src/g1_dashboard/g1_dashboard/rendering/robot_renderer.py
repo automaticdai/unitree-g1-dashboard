@@ -22,6 +22,7 @@ COLOR_LINK = (0.55, 0.65, 0.80, 1.0)
 COLOR_JOINT = (0.30, 0.55, 0.85, 1.0)
 COLOR_JOINT_SELECTED = (1.00, 0.55, 0.10, 1.0)
 COLOR_ROOT = (0.85, 0.85, 0.85, 1.0)
+COLOR_GHOST = (1.00, 0.55, 0.10, 0.45)  # semi-transparent orange for commanded pose
 
 
 @dataclass
@@ -125,6 +126,36 @@ class RobotRenderer:
             self._quadric, radius, radius, length,
             self._options.cylinder_slices, 1)
         GL.glPopMatrix()
+
+    def draw_ghost(self, fk: FKResult) -> None:
+        """Overlay a semi-transparent skeleton at a commanded pose."""
+        self._ensure_quadric()
+
+        GL.glDisable(GL.GL_LIGHTING)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glDepthMask(GL.GL_FALSE)  # don't occlude the real robot
+
+        GL.glColor4f(*COLOR_GHOST)
+        r = self._options.link_radius * 1.3
+        for link in self._skeleton.links:
+            if link.parent is None:
+                continue
+            p_pos = fk.link_positions.get(link.parent)
+            c_pos = fk.link_positions.get(link.name)
+            if p_pos is None or c_pos is None:
+                continue
+            self._draw_cylinder(p_pos, c_pos, r)
+
+        sphere_r = self._options.joint_radius * 1.25
+        for link in self._skeleton.links:
+            pos = fk.link_positions.get(link.name)
+            if pos is None:
+                continue
+            self._draw_sphere(pos, sphere_r)
+
+        GL.glDepthMask(GL.GL_TRUE)
+        GL.glDisable(GL.GL_BLEND)
 
     def pick_joint(self, fk: FKResult, ray_origin: np.ndarray,
                    ray_dir: np.ndarray, max_distance: float = 0.08) -> int | None:

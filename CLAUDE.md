@@ -62,7 +62,7 @@ Spin Thread:       rclpy.spin(node) — daemon thread
 
 ## Current Status
 
-Phases 1-3 complete. Phases 4-6 pending.
+Phases 1-4 complete. Phases 5-6 pending.
 
 Phase 2 adds:
 - `g1_dashboard_bridge` C++ node with `SafetyMonitor` (heartbeat watchdog, limit clipping, NaN/Inf rejection, rate limit). Real unitree_hg integration gated by CMake `-DUSE_UNITREE_HG=ON` — in standalone mode the bridge validates and logs commands only.
@@ -79,4 +79,12 @@ Phase 3 adds:
 - `utils/selection.py` — `SelectionState` QObject shared across panels. 3D click ↔ joint row click are both wired to it and stay in sync.
 - `widgets/joint_row.py` — clickable joint row with live value display, rad/deg toggle.
 
-Test coverage: 48 Python tests passing, 13 skipped (PySide6-gated). 16 C++ tests in bridge.
+Phase 4 adds:
+- `JointRow` upgraded with `QSlider` + `QDoubleSpinBox` per joint; tracks `current` vs `command` with a `dirty` flag. Dirty rows show an orange left border.
+- `JointControlPanel` Send/Reset/Home/E-Stop buttons are wired. "Live send" toggle publishes `JointCommand` on every edit; staged mode batches on "Send". "Reset" snaps commands to current; "Home" commands zero pose. E-Stop calls the `EmergencyStop` service on `/emergency_stop`.
+- Gain editor in the panel footer: kp/kd spin boxes + preset dropdown (Stiff/Default/Compliant/Custom). Presets are relative multipliers applied to each joint's `default_kp`/`default_kd`; overrides are per-joint.
+- `DashboardNode` lazy-inits the `JointCommand` publisher on `/joint_commands` and an `EmergencyStop` service client.
+- `utils/commanded_state.py` — `CommandedState` QObject shared on the node, mirroring `SelectionState`. Emits `commands_changed(positions, dirty)` when the commanded pose changes.
+- `RobotRenderer.draw_ghost()` + `DigitalTwinGLWidget.set_commanded_pose()` render a semi-transparent orange skeleton overlay whenever any joint is dirty.
+
+Test coverage: 48 Python tests passing, 24 skipped (PySide6-gated; includes new `test_joint_row`, `test_commanded_state`, `test_gain_presets`). 16 C++ tests in bridge.

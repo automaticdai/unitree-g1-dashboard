@@ -31,6 +31,7 @@ class DigitalTwinGLWidget(QOpenGLWidget):
         self._renderer: RobotRenderer | None = None
         self._camera = CameraController()
         self._fk: FKResult = self._skeleton.compute_fk(zero_pose())
+        self._ghost_fk: FKResult | None = None
         self._selected_joint: int | None = None
 
         # Mouse interaction state
@@ -52,6 +53,16 @@ class DigitalTwinGLWidget(QOpenGLWidget):
     def update_joint_positions(self, positions: list[float]) -> None:
         """Recompute FK from a list of joint angles and schedule a redraw."""
         self._fk = self._skeleton.compute_fk(positions)
+        self._dirty = True
+
+    def set_commanded_pose(self, positions: list[float] | None) -> None:
+        """Set the commanded (ghost) pose. Pass None to hide the ghost."""
+        if positions is None:
+            if self._ghost_fk is not None:
+                self._ghost_fk = None
+                self._dirty = True
+            return
+        self._ghost_fk = self._skeleton.compute_fk(positions)
         self._dirty = True
 
     def set_selected_joint(self, joint_index: int | None) -> None:
@@ -98,6 +109,8 @@ class DigitalTwinGLWidget(QOpenGLWidget):
         draw_axes()
         if self._renderer is not None:
             self._renderer.draw(self._fk, selected_joint=self._selected_joint)
+            if self._ghost_fk is not None:
+                self._renderer.draw_ghost(self._ghost_fk)
 
     # --- Mouse input ---
 

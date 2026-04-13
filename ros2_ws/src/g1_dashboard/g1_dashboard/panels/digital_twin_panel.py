@@ -46,6 +46,8 @@ class DigitalTwinPanel(QDockWidget):
         self._node.signals.joint_states_received.connect(self._on_joint_states)
         # React to selection changes from other panels
         self._node.selection.selection_changed.connect(self._on_selection)
+        # Ghost overlay follows commanded-pose state
+        self._node.commanded.commands_changed.connect(self._on_commands_changed)
 
     def _create_viewport(self, reset_btn: QPushButton) -> QWidget:
         try:
@@ -91,3 +93,12 @@ class DigitalTwinPanel(QDockWidget):
         if self._gl_widget is None:
             return
         self._gl_widget.set_selected_joint(None if index < 0 else index)
+
+    def _on_commands_changed(self, positions: list, dirty: list) -> None:
+        """Show the ghost only when at least one joint is commanded off-current."""
+        if self._gl_widget is None:
+            return
+        if any(dirty):
+            self._gl_widget.set_commanded_pose(list(positions))
+        else:
+            self._gl_widget.set_commanded_pose(None)
