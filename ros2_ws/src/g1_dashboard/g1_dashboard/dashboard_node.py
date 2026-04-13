@@ -182,13 +182,13 @@ class DashboardNode(Node):
             self._joint_cmd_pub.publish(cmd)
         return len(commands)
 
-    def trigger_estop(self, activate: bool = True, timeout: float = 1.0) -> bool | None:
-        """Call EmergencyStop service. Returns None if unreachable, else success bool.
+    def trigger_estop(self, activate: bool = True) -> bool | None:
+        """Call EmergencyStop service asynchronously.
 
-        Non-blocking from the caller's perspective: uses call_async; we spin
-        briefly here because this is invoked from the GUI thread and the
-        rclpy spin thread will dispatch the response. The timeout caps how
-        long we wait for the service to be discovered.
+        Returns True if the request was dispatched, False if the service is
+        not yet discovered, or None if the srv type isn't available.
+        Never blocks the caller — this is safe to call from the Qt thread.
+        The rclpy spin thread dispatches the response via the done-callback.
         """
         try:
             from g1_dashboard_msgs.srv import EmergencyStop
@@ -199,17 +199,24 @@ class DashboardNode(Node):
         if self._estop_client is None:
             self._estop_client = self.create_client(EmergencyStop, '/emergency_stop')
 
-        if not self._estop_client.wait_for_service(timeout_sec=timeout):
-            self.get_logger().warn('EmergencyStop service not available')
-            return None
+        if not self._estop_client.service_is_ready():
+            self.get_logger().warn('EmergencyStop service not available (not discovered yet)')
+            return False
 
         req = EmergencyStop.Request()
         req.activate = activate
         future = self._estop_client.call_async(req)
-        # Spin thread handles the callback; fire-and-forget from GUI perspective.
-        # Caller can log or poll `future.done()` if they need the result.
-        future.add_done_callback(
-            lambda f: self.get_logger().info(
-                f'E-stop response: success={f.result().success} msg={f.result().message}'
-                if f.result() is not None else 'E-stop call failed'))
+        future.add_done_callback(self._on_estop_response)
         return True
+
+    def _on_estop_response(self, future) -> None:
+        try:
+            result = future.result()
+        except Exception as exc:
+            self.get_logger().error(f'E-stop call failed: {exc}')
+            return
+        if result is None:
+            self.get_logger().error('E-stop call returned no result')
+            return
+        self.get_logger().info(
+            f'E-stop response: success={result.success} msg={result.message}')

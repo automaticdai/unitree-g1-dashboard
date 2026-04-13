@@ -212,7 +212,9 @@ class JointControlPanel(QDockWidget):
     def _on_estop_clicked(self) -> None:
         result = self._node.trigger_estop(activate=True)
         if result is None:
-            self._node.get_logger().warn('E-STOP: service unreachable')
+            self._node.get_logger().error('E-STOP: EmergencyStop srv type unavailable')
+        elif result is False:
+            self._node.get_logger().warn('E-STOP: service not yet discovered')
 
     # --- Gain editor ---
 

@@ -190,23 +190,21 @@ class JointRow(QWidget):
         self.command_edited.emit(self._joint_index, clamped)
 
     def _apply_style(self) -> None:
-        if self._selected and self._dirty:
-            border = '3px solid #ff8c1a'
+        if self._selected:
             bg = '#3a4a62'
-        elif self._selected:
             border = '3px solid #ff8c1a'
-            bg = '#3a4a62'
+            hover_rule = ''  # don't hover-shift the selected row
         elif self._dirty:
+            bg = 'transparent'
             border = '3px solid #c87600'
-            bg = 'transparent'
+            hover_rule = 'JointRow:hover { background-color: #2a2a30; }'
         else:
-            border = '3px solid transparent'
             bg = 'transparent'
+            border = '3px solid transparent'
+            hover_rule = 'JointRow:hover { background-color: #2a2a30; }'
         self.setStyleSheet(
             f'JointRow {{ background-color: {bg}; border-left: {border}; }}'
-            f'JointRow:hover {{ background-color: #2a2a30; }}'
-            if not self._selected else
-            f'JointRow {{ background-color: {bg}; border-left: {border}; }}'
+            f'{hover_rule}'
         )
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
