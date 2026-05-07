@@ -3,3 +3,9 @@ __pycache__/
 ros2_ws/build/
 ros2_ws/log/
 ros2_ws/install/
+
+# Upstream Unitree SDK clone — re-fetched with:
+#   git clone https://github.com/unitreerobotics/unitree_ros2 ros2_ws/src/unitree_ros2
+# Only the unitree_hg message package (locally patched in ros2_ws/src/unitree_hg)
+# is required to build the bridge with -DUSE_UNITREE_HG=ON.
+ros2_ws/src/unitree_ros2/

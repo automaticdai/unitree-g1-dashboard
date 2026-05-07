@@ -1,10 +1,33 @@
 g1_dashboard_bridge:
   ros__parameters:
     robot_variant: "29dof"            # "23dof" or "29dof"
-    joint_state_publish_rate: 50.0    # Hz
-    imu_publish_rate: 50.0            # Hz
-    battery_publish_rate: 1.0         # Hz
-    command_max_rate: 50.0            # Hz (throttle incoming commands)
-    heartbeat_timeout: 0.5            # seconds before safety stop
+    joint_state_publish_rate: 50.0    # Hz (downsampled from 500 Hz LowState)
+    imu_publish_rate: 50.0            # Hz (downsampled from 500 Hz LowState)
+    battery_publish_rate: 1.0         # Hz (BmsState rate; not currently downsampled)
+    command_max_rate: 50.0            # Hz (per-message ingress rate limit)
+    heartbeat_timeout: 0.5            # s before commands are gated off
     enforce_joint_limits: true
-    enable_command_forwarding: true    # false = read-only mode
+    enable_command_forwarding: true   # false = read-only mode
+
+    # LowCmd publisher (only used when built with -DUSE_UNITREE_HG=ON)
+    lowcmd_publish_rate: 500.0        # Hz — Unitree firmware expects ~500 Hz
+    lowcmd_topic: "lowcmd"
+    lowstate_topic: "lowstate"
+    bms_topic: "bms_state"
+
+    # Damping kd applied to all active motors during E-Stop. Kp is forced to 0
+    # so the robot becomes compliant; kd provides resistance to limit how
+    # fast joints fall under gravity.
+    damping_kd: 0.5
+
+    # Per-joint slew rate (rad/s). Caps how fast the integrated commanded
+    # position can move toward the dashboard target; protects motors and
+    # mechanism from instantaneous slider jumps. Order matches
+    # g1_joint_config (0..28). 0.0 = use builtin default for that joint
+    # (legs/waist 2.0, shoulders/elbows 4.0, wrists 6.0).
+    slew_rate_per_joint:
+      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0,        # left leg
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,        # right leg
+       0.0, 0.0, 0.0,                       # waist
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,   # left arm
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]   # right arm

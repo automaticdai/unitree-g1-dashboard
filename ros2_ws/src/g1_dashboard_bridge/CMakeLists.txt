@@ -28,9 +28,11 @@ else()
   message(STATUS "Building in standalone mode (no unitree_hg)")
 endif()
 
-# Bridge library
+# Bridge library — pure logic, no unitree_hg dependency so unit tests build
+# without the proprietary SDK.
 add_library(bridge_lib
   src/safety_monitor.cpp
+  src/lowcmd_builder.cpp
 )
 target_include_directories(bridge_lib PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -40,6 +42,11 @@ ament_target_dependencies(bridge_lib
   rclcpp
   g1_dashboard_msgs
 )
+if(USE_UNITREE_HG)
+  # CRC routine + LowCmd writer are only compiled when unitree_hg is present.
+  target_sources(bridge_lib PRIVATE src/vendor/motor_crc_hg.cpp)
+  ament_target_dependencies(bridge_lib unitree_hg)
+endif()
 
 # Bridge node executable
 add_executable(g1_dashboard_bridge_node
@@ -77,6 +84,9 @@ if(BUILD_TESTING)
 
   ament_add_gtest(test_joint_limits test/test_joint_limits.cpp)
   target_link_libraries(test_joint_limits bridge_lib)
+
+  ament_add_gtest(test_lowcmd_builder test/test_lowcmd_builder.cpp)
+  target_link_libraries(test_lowcmd_builder bridge_lib)
 endif()
 
 ament_package()
